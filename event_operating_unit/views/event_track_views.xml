@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record model="ir.ui.view" id="view_event_track_tree_inherit_ou">
+        <field name="name">event.track.tree</field>
+        <field name="model">event.track</field>
+        <field name="inherit_id" ref="website_event_track.view_event_track_tree" />            
+        <field name="arch" type="xml">
+            <field name="event_id" position="after">
+                <field name="operating_unit_id" groups="operating_unit.group_multi_operating_unit" />
+            </field>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="view_event_track_search">
+        <field name="name">event.track.search</field>
+        <field name="model">event.track</field>
+        <field name="inherit_id" ref="website_event_track.view_event_track_search" />
+        <field name="arch" type="xml">
+            <search>
+                <field name="operating_unit_id" string="Operating Unit" groups="operating_unit.group_multi_operating_unit" />
+            </search>
+            <xpath expr="//filter[@context=&quot;{'group_by':'event_id'}&quot;]" position="after">
+                <filter string="Operating Unit" context="{'group_by': 'operating_unit_id'}" groups="operating_unit.group_multi_operating_unit" />
+
+            </xpath>
+        </field>
+    </record>
+</odoo>
