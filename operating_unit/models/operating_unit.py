@@ -54,9 +54,9 @@ class OperatingUnit(models.Model):
     def create(self, vals_list):
         res = super().create(vals_list)
         res.write({"user_ids": [fields.Command.link(self.env.user.id)]})
-        self.clear_caches()
+        self.env.registry.clear_cache()
         return res
 
     def write(self, vals):
-        self.clear_caches()
+        self.env.registry.clear_cache()
         return super().write(vals)

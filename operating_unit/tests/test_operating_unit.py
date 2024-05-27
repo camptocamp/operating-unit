@@ -156,17 +156,17 @@ class TestOperatingUnit(common.TransactionCase):
 
     def test_03_operating_unit(self):
         """
-        The method operating_unit_default_get should not return
+        The method _get_default_operating_unit should not return
         operating units belonging to a company that is not active
         """
         self.assertEqual(
-            self.res_users_model.operating_unit_default_get(uid2=self.user1.id),
+            self.res_users_model._get_default_operating_unit(uid2=self.user1.id),
             self.ou1,
         )
         self.assertEqual(
             self.res_users_model.with_company(
                 self.company_2
-            ).operating_unit_default_get(uid2=self.user1.id),
+            )._get_default_operating_unit(uid2=self.user1.id),
             False,
         )
 
@@ -178,7 +178,7 @@ class TestOperatingUnit(common.TransactionCase):
         self.assertEqual(
             self.res_users_model.with_company(
                 self.company_2
-            ).operating_unit_default_get(uid2=self.user1.id),
+            )._get_default_operating_unit(uid2=self.user1.id),
             ou_company_2,
         )
 
