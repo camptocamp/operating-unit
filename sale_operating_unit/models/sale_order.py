@@ -9,30 +9,58 @@ from odoo.exceptions import ValidationError
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
+    operating_unit_id = fields.Many2one(
+        comodel_name="operating.unit",
+        string="Operating Unit",
+        default=lambda self: self._default_operating_unit(),
+        readonly=False,
+        store=True,
+        precompute=True,
+        compute="_compute_operating_unit_id",
+    )
+
     @api.model
     def _default_operating_unit(self):
         team = self.env["crm.team"]._get_default_team_id()
         if team.operating_unit_id:
             return team.operating_unit_id
-        return self.env.user.default_operating_unit_id
+        return self.env["res.users"]._get_default_operating_unit()
 
-    operating_unit_id = fields.Many2one(
-        comodel_name="operating.unit",
-        string="Operating Unit",
-        default=_default_operating_unit,
-        readonly=True,
-        states={"draft": [("readonly", False)], "sent": [("readonly", False)]},
-    )
+    @api.depends("team_id")
+    def _compute_operating_unit_id(self):
+        for sale in self:
+            if sale.team_id:
+                sale.operating_unit_id = sale.team_id.operating_unit_id
 
-    @api.onchange("team_id")
-    def onchange_team_id(self):
-        if self.team_id:
-            self.operating_unit_id = self.team_id.operating_unit_id
+    @api.depends("partner_id", "user_id", "operating_unit_id")
+    def _compute_team_id(self):
+        res = super()._compute_team_id()
+        for order in self:
+            if (
+                order.team_id
+                and order.team_id.operating_unit_id != order.operating_unit_id
+            ):
+                order.team_id = False
+        return res
 
-    @api.onchange("operating_unit_id")
-    def onchange_operating_unit_id(self):
-        if self.team_id and self.team_id.operating_unit_id != self.operating_unit_id:
-            self.team_id = False
+    @api.depends("operating_unit_id")
+    def _compute_journal_id(self):
+        res = super()._compute_journal_id()
+        for sale in self:
+            sale.journal_id = (
+                self.env["account.journal"]
+                .search(
+                    [
+                        "|",
+                        ("operating_unit_id", "=", sale.operating_unit_id.id),
+                        ("operating_unit_id", "=", False),
+                        ("type", "=", "sale"),
+                    ],
+                    limit=1,
+                )
+                .id
+            )
+        return res
 
     @api.constrains("team_id", "operating_unit_id")
     def _check_team_operating_unit(self):
@@ -64,7 +92,7 @@ class SaleOrder(models.Model):
 
     def _prepare_invoice(self):
         self.ensure_one()
-        invoice_vals = super(SaleOrder, self)._prepare_invoice()
+        invoice_vals = super()._prepare_invoice()
         invoice_vals["operating_unit_id"] = self.operating_unit_id.id
         return invoice_vals
 
@@ -77,3 +105,12 @@ class SaleOrderLine(models.Model):
         string="Operating Unit",
         store=True,
     )
+
+    def _prepare_invoice_line(self, **optional_values):
+        values = super()._prepare_invoice_line(**optional_values)
+        values.update(
+            {
+                "operating_unit_id": self.operating_unit_id.id,
+            }
+        )
+        return values
