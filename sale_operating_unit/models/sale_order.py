@@ -16,6 +16,7 @@ class SaleOrder(models.Model):
         readonly=False,
         store=True,
         precompute=True,
+        check_company=True,
         compute="_compute_operating_unit_id",
     )
 
@@ -71,22 +72,6 @@ class SaleOrder(models.Model):
                         "Configuration error. The Operating "
                         "Unit of the sales team must match "
                         "with that of the quote/sales order."
-                    )
-                )
-
-    @api.constrains("operating_unit_id", "company_id")
-    def _check_company_operating_unit(self):
-        for rec in self:
-            if (
-                rec.company_id
-                and rec.operating_unit_id
-                and rec.company_id != rec.operating_unit_id.company_id
-            ):
-                raise ValidationError(
-                    _(
-                        "Configuration error. The Company in "
-                        "the Sales Order and in the Operating "
-                        "Unit must be the same."
                     )
                 )
 
