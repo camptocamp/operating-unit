@@ -10,6 +10,7 @@ class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
     operating_unit_id = fields.Many2one(
+        check_company=True,
         comodel_name="operating.unit",
     )
 
@@ -21,22 +22,6 @@ class AccountMoveLine(models.Model):
                 if move.operating_unit_id:
                     vals["operating_unit_id"] = move.operating_unit_id.id
         return super().create(vals_list)
-
-    @api.constrains("operating_unit_id", "company_id")
-    def _check_company_operating_unit(self):
-        for rec in self:
-            if (
-                rec.company_id
-                and rec.operating_unit_id
-                and rec.company_id != rec.operating_unit_id.company_id
-            ):
-                raise UserError(
-                    _(
-                        "Configuration error. The Company in the"
-                        " Move Line and in the Operating Unit must "
-                        "be the same."
-                    )
-                )
 
     @api.constrains("operating_unit_id", "move_id")
     def _check_move_operating_unit(self):
@@ -123,6 +108,7 @@ class AccountMove(models.Model):
         readonly=False,
         compute="_compute_operating_unit",
         store=True,
+        check_company=True,
     )
 
     @api.model
@@ -257,21 +243,5 @@ class AccountMove(models.Model):
             ):
                 raise UserError(
                     _("The OU in the Move and in Journal must be the same.")
-                )
-        return True
-
-    @api.constrains("operating_unit_id", "company_id")
-    def _check_company_operating_unit(self):
-        for move in self:
-            if (
-                move.company_id
-                and move.operating_unit_id
-                and move.company_id != move.operating_unit_id.company_id
-            ):
-                raise UserError(
-                    _(
-                        "The Company in the Move and in "
-                        "Operating Unit must be the same."
-                    )
                 )
         return True
