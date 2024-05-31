@@ -41,14 +41,10 @@ class OperatingUnit(models.Model):
         ),
     ]
 
-    def name_get(self):
-        res = []
+    @api.depends("name", "code")
+    def _compute_display_name(self):
         for ou in self:
-            name = ou.name
-            if ou.code:
-                name = f"[{ou.code}] {name}"
-            res.append((ou.id, name))
-        return res
+            ou.display_name = f"[{ou.code}] {ou.name}"
 
     @api.model_create_multi
     def create(self, vals_list):
