@@ -2,56 +2,58 @@
 # Jordi Ballester Alomar
 # © 2019 Serpent Consulting Services Pvt. Ltd. - Sudhir Arya
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
-from odoo.tests import common
+
+from odoo.models import Command
+
+from odoo.addons.operating_unit.tests.common import OperatingUnitCommon
 
 
-class TestSaleOperatingUnit(common.TransactionCase):
+class TestSaleOperatingUnit(OperatingUnitCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.res_groups = cls.env["res.groups"]
-        cls.partner_model = cls.env["res.partner"]
-        cls.res_users_model = cls.env["res.users"]
         cls.sale_model = cls.env["sale.order"]
         cls.sale_line_model = cls.env["sale.order.line"]
         cls.sale_team_model = cls.env["crm.team"]
         cls.acc_move_model = cls.env["account.move"]
-        cls.res_company_model = cls.env["res.company"]
         cls.product_model = cls.env["product.product"]
-        cls.operating_unit_model = cls.env["operating.unit"]
-        cls.company_model = cls.env["res.company"]
         cls.payment_model = cls.env["sale.advance.payment.inv"]
         # Company
-        cls.company = cls.env.ref("base.main_company")
         cls.grp_sale_user = cls.env.ref("sales_team.group_sale_manager")
         cls.grp_acc_user = cls.env.ref("account.group_account_invoice")
-        # Main Operating Unit
-        cls.ou1 = cls.env.ref("operating_unit.main_operating_unit")
-        # B2B Operating Unit
-        cls.b2b = cls.env.ref("operating_unit.b2b_operating_unit")
-        # B2C Operating Unit
-        cls.b2c = cls.env.ref("operating_unit.b2c_operating_unit")
         # Payment Term
         cls.pay = cls.env.ref("account.account_payment_term_immediate")
         # Customer
         cls.customer = cls.env.ref("base.res_partner_2")
         # Price list
         cls.pricelist = cls.env["product.pricelist"].search([], limit=1)
-        # Partner
-        cls.partner1 = cls.env.ref("base.res_partner_1")
         # Products
         cls.product1 = cls.env.ref("product.product_product_2")
         cls.product1.write({"invoice_policy": "order"})
-        # Create user1
-        cls.user1 = cls._create_user(
-            "user_1",
-            [cls.grp_sale_user, cls.grp_acc_user],
-            cls.company,
-            [cls.ou1, cls.b2c],
+        # Update users
+        cls.user1.write(
+            {
+                "groups_id": [
+                    Command.link(cls.grp_sale_user.id),
+                    Command.link(cls.grp_acc_user.id),
+                ],
+                "operating_unit_ids": [
+                    Command.link(cls.ou1.id),
+                    Command.link(cls.b2c.id),
+                ],
+            }
         )
-        # Create user2
-        cls.user2 = cls._create_user(
-            "user_2", [cls.grp_sale_user, cls.grp_acc_user], cls.company, [cls.b2c]
+        cls.user2.write(
+            {
+                "groups_id": [
+                    Command.link(cls.grp_sale_user.id),
+                    Command.link(cls.grp_acc_user.id),
+                ],
+                "operating_unit_ids": [
+                    Command.set(cls.b2c.id),
+                ],
+                "default_operating_unit_id": [],
+            }
         )
 
         # Create sales team OU1
@@ -76,24 +78,6 @@ class TestSaleOperatingUnit(common.TransactionCase):
             cls.pricelist,
             cls.sale_team_b2c,
         )
-
-    @classmethod
-    def _create_user(cls, login, groups, company, operating_units):
-        """Create a user."""
-        group_ids = [group.id for group in groups]
-        user = cls.res_users_model.create(
-            {
-                "name": "Test Sales User",
-                "login": login,
-                "password": "demo",
-                "email": "example@yourcompany.com",
-                "company_id": company.id,
-                "company_ids": [(4, company.id)],
-                "operating_unit_ids": [(4, ou.id) for ou in operating_units],
-                "groups_id": [(6, 0, group_ids)],
-            }
-        )
-        return user
 
     @classmethod
     def _create_sale_team(cls, uid, operating_unit):
@@ -121,20 +105,29 @@ class TestSaleOperatingUnit(common.TransactionCase):
             }
         )
         cls.sale_line_model.with_user(uid).create(
-            {"order_id": sale.id, "product_id": product.id, "name": "Sale Order Line"}
+            {
+                "order_id": sale.id,
+                "product_id": product.id,
+                "name": "Sale Order Line",
+                "product_uom_qty": 1,
+            }
         )
         return sale
 
     def _confirm_sale(self, sale):
         sale.action_confirm()
-        payment = self.payment_model.create({"advance_payment_method": "delivered"})
         sale_context = {
-            "active_id": sale.id,
-            "active_ids": sale.ids,
             "active_model": "sale.order",
-            "open_invoices": True,
+            "active_ids": [sale.id],
+            "active_id": sale.id,
         }
-        res = payment.with_context(**sale_context).create_invoices()
+        # Let's do an invoice with invoiceable lines
+        payment = (
+            self.env["sale.advance.payment.inv"]
+            .with_context(**sale_context)
+            .create({"advance_payment_method": "delivered"})
+        )
+        res = payment.create_invoices()
         invoice_id = res["res_id"]
         return invoice_id
 
