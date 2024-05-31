@@ -69,7 +69,8 @@ class AccountMoveLine(models.Model):
         move_vals = self._prepare_inter_ou_balancing_move(bank_journal)
         move = self.env["account.move"].create(move_vals)
         ou_balances = self._check_ou_balance(self)
-        amls = []
+        amls = self.env["account.move.line"]
+        line_datas = []
         for ou_id in list(ou_balances.keys()):
             # If the OU is already balanced, then do not continue
             if move.company_id.currency_id.is_zero(ou_balances[ou_id]):
@@ -80,9 +81,11 @@ class AccountMoveLine(models.Model):
                 move, ou_id, ou_balances
             )
             if line_data:
-                amls.append(self.with_context(wip=True).create(line_data))
+                line_datas.append(line_data)
+        if line_datas:
+            amls = self.with_context(check_move_validity=False).create(line_datas)
         if amls:
-            move.with_context(wip=False).write(
+            move.with_context(check_move_validity=True).write(
                 {"line_ids": [(4, aml.id) for aml in amls]}
             )
         move.with_context(inter_ou_balance_entry=True).action_post()
@@ -196,7 +199,8 @@ class AccountMove(models.Model):
                 continue
             # Create balancing entries for un-balanced OU's.
             ou_balances = self._check_ou_balance(move)
-            amls = []
+            amls = self.env["account.move.line"]
+            line_datas = []
             for ou_id in list(ou_balances.keys()):
                 # If the OU is already balanced, then do not continue
                 if move.company_id.currency_id.is_zero(ou_balances[ou_id]):
@@ -207,11 +211,11 @@ class AccountMove(models.Model):
                     move, ou_id, ou_balances
                 )
                 if line_data:
-                    amls.append(
-                        ml_obj.with_context(check_move_validity=True).create(line_data)
-                    )
+                    line_datas.append(line_data)
+            if line_datas:
+                amls = ml_obj.with_context(check_move_validity=False).create(line_datas)
             if amls:
-                move.with_context(check_move_validity=False).write(
+                move.with_context(check_move_validity=True).write(
                     {"line_ids": [(4, aml.id) for aml in amls]}
                 )
 

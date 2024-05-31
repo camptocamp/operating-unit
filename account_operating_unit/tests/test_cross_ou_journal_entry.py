@@ -11,9 +11,6 @@ from . import test_account_operating_unit as test_ou
 
 @tagged("post_install", "-at_install")
 class TestCrossOuJournalEntry(test_ou.TestAccountOperatingUnit):
-    def setUp(self):
-        super().setUp()
-
     def _check_balance(self, account_id, acc_type="clearing"):
         # Check balance for all operating units
         domain = [("account_id", "=", account_id)]
@@ -44,10 +41,10 @@ class TestCrossOuJournalEntry(test_ou.TestAccountOperatingUnit):
         """
         Call read_group method and return the balance of particular account.
         """
-        aml_rec = self.aml_model.with_user(self.user_id.id)._read_group(
+        aml_rec = self.aml_model.with_user(self.user1.id)._read_group(
             domain, ["account_id"], ["debit:sum", "credit:sum"]
         )[0]
-        return aml_rec.get("debit", 0) - aml_rec.get("credit", 0)
+        return aml_rec[1] - aml_rec[2]
 
     def test_cross_ou_journal_entry(self):
         """Test balance of cross OU journal entries.
@@ -93,7 +90,11 @@ class TestCrossOuJournalEntry(test_ou.TestAccountOperatingUnit):
         move_vals.update(
             {"journal_id": journal_ids and journal_ids.id, "line_ids": lines}
         )
-        move = self.move_model.with_user(self.user_id.id).create(move_vals)
+        move = (
+            self.move_model.with_user(self.user1.id)
+            .with_context(check_move_validity=False)
+            .create(move_vals)
+        )
         # Post journal entries
         move.action_post()
         # Check the balance of the account
@@ -104,7 +105,7 @@ class TestCrossOuJournalEntry(test_ou.TestAccountOperatingUnit):
     def test_journal_no_ou(self):
         """Test journal can not create if use self-balance but not ou in journal"""
         with self.assertRaises(UserError):
-            with Form(self.journal_model) as f:
+            with Form(self.journal_model.with_company(self.company)) as f:
                 f.type = "bank"
                 f.name = "Test new bank not ou"
                 f.code = "testcode"
