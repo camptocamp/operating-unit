@@ -1,2 +1,1 @@
 odoo-addon-account_operating_unit @ git+https://github.com/OCA/operating-unit.git@refs/pull/670/head#subdirectory=account_operating_unit
-odoo-addon-analytic_operating_unit @ git+https://github.com/OCA/operating-unit.git@refs/pull/669/head#subdirectory=analytic_operating_unit
