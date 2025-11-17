@@ -1,7 +1,7 @@
 # © 2017-TODAY ForgeFlow S.L.
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html)
 
-from odoo.models import Command
+from odoo.fields import Command
 from odoo.tests import common
 
 
@@ -9,9 +9,8 @@ class OperatingUnitCommon(common.TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.res_users_model = cls.env["res.users"].with_context(
-            tracking_disable=True, no_reset_password=True
-        )
+        cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
+        cls.res_users_model = cls.env["res.users"].with_context(no_reset_password=True)
         # Groups
         cls.grp_ou_mngr = cls.env.ref("operating_unit.group_manager_operating_unit")
         cls.grp_ou_multi = cls.env.ref("operating_unit.group_multi_operating_unit")
@@ -41,9 +40,9 @@ class OperatingUnitCommon(common.TransactionCase):
                 "password": "demo",
                 "email": "test@yourcompany.com",
                 "company_id": company.id,
-                "company_ids": [(4, company.id)],
-                "operating_unit_ids": [(4, ou.id) for ou in operating_units],
-                "groups_id": [Command.link(group.id)],
+                "company_ids": [Command.link(company.id)],
+                "operating_unit_ids": [Command.link(ou.id) for ou in operating_units],
+                "group_ids": [Command.link(group.id)],
             }
         )
         return user
