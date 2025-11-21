@@ -1,0 +1,2 @@
+odoo-addon-analytic_operating_unit @ git+https://github.com/OCA/operating-unit.git@refs/pull/813/head#subdirectory=analytic_operating_unit
+odoo-addon-base_view_inheritance_extension @ git+https://github.com/OCA/server-tools.git@refs/pull/3382/head#subdirectory=base_view_inheritance_extension
