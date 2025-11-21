@@ -1,0 +1,1 @@
+odoo-addon-sales_team_operating_unit @ git+https://github.com/OCA/operating-unit.git@refs/pull/814/head#subdirectory=sales_team_operating_unit
