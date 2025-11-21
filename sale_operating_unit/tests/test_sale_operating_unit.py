@@ -4,7 +4,7 @@
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl.html).
 
 from odoo.exceptions import ValidationError
-from odoo.models import Command
+from odoo.fields import Command, Domain
 
 from odoo.addons.operating_unit.tests.common import OperatingUnitCommon
 
@@ -27,7 +27,7 @@ class TestSaleOperatingUnit(OperatingUnitCommon):
         # Customer
         cls.customer = cls.env.ref("base.res_partner_2")
         # Price list
-        cls.pricelist = cls.env["product.pricelist"].search([], limit=1)
+        cls.pricelist = cls.env["product.pricelist"].search(Domain.TRUE, limit=1)
         # Products
         cls.product1 = cls.env.ref("product.product_product_2")
         cls.product1.write({"invoice_policy": "order"})
@@ -138,7 +138,12 @@ class TestSaleOperatingUnit(OperatingUnitCommon):
         # User 2 is only assigned to Operating Unit B2C, and cannot
         # Access Sales order from Main Operating Unit.
         sale = self.sale_model.with_user(self.user2.id).search(
-            [("id", "=", self.sale1.id), ("operating_unit_id", "=", self.ou1.id)]
+            Domain.AND(
+                [
+                    Domain("id", "=", self.sale1.id),
+                    Domain("operating_unit_id", "=", self.ou1.id),
+                ]
+            )
         )
         self.assertEqual(
             sale.ids, [], f"User 2 should not have access to OU {self.ou1.name}"
@@ -149,7 +154,12 @@ class TestSaleOperatingUnit(OperatingUnitCommon):
         b2c_invoice_id = self._confirm_sale(self.sale2)
         # Checks that invoice has OU b2c
         b2c = self.acc_move_model.with_user(self.user2.id).search(
-            [("id", "=", b2c_invoice_id), ("operating_unit_id", "=", self.b2c.id)]
+            Domain.AND(
+                [
+                    Domain("id", "=", b2c_invoice_id),
+                    Domain("operating_unit_id", "=", self.b2c.id),
+                ]
+            )
         )
         self.assertNotEqual(b2c.ids, [], "Invoice should have b2c OU")
 
@@ -158,14 +168,24 @@ class TestSaleOperatingUnit(OperatingUnitCommon):
         # User 2 is only assigned to Operating Unit B2C, and cannot
         # Access Sales order from Main Operating Unit.
         sale = self.sale_model.with_user(self.user2.id).search(
-            [("id", "=", self.sale1.id), ("operating_unit_id", "=", self.ou1.id)]
+            Domain.AND(
+                [
+                    Domain("id", "=", self.sale1.id),
+                    Domain("operating_unit_id", "=", self.ou1.id),
+                ]
+            )
         )
         self.assertEqual(
             sale.ids, [], f"User 2 should not have access to OU {self.ou1.name}"
         )
 
         sale = self.sale_model.with_user(self.user2.id).search(
-            [("id", "=", self.sale2.id), ("operating_unit_id", "=", self.b2c.id)]
+            Domain.AND(
+                [
+                    Domain("id", "=", self.sale2.id),
+                    Domain("operating_unit_id", "=", self.b2c.id),
+                ]
+            )
         )
 
         self.assertEqual(
