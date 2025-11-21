@@ -2,6 +2,7 @@
 # Copyright (C) 2019 Serpent Consulting Services
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 from odoo import api, fields, models
+from odoo.fields import Domain
 
 
 class ResPartner(models.Model):
@@ -10,7 +11,7 @@ class ResPartner(models.Model):
     @api.model
     def operating_unit_default_get(self, uid2=False):
         if not uid2:
-            uid2 = self._uid
+            uid2 = self.env.uid
         user = self.env["res.users"].browse(uid2)
         return user.default_operating_unit_id
 
@@ -23,34 +24,35 @@ class ResPartner(models.Model):
         return self._default_operating_unit()
 
     operating_unit_ids = fields.Many2many(
-        "operating.unit",
-        "operating_unit_partner_rel",
-        "partner_id",
-        "operating_unit_id",
-        "Operating Units",
+        comodel_name="operating.unit",
+        relation="operating_unit_partner_rel",
+        column1="partner_id",
+        column2="operating_unit_id",
+        string="Operating Units",
         default=lambda self: self._default_operating_units(),
     )
+
+    @api.model
+    def _user_ous_domain(self):
+        ou_ids = self.env.user.operating_unit_ids.ids
+        domain = Domain.OR(
+            [
+                Domain("operating_unit_ids", "in", ou_ids),
+                Domain("operating_unit_ids", "=", False),
+            ]
+        )
+        return domain
 
     # Extending methods to replace a record rule.
     # Ref: https://github.com/OCA/operating-unit/issues/258
     @api.model
     def search(self, args, offset=0, limit=None, order=None):
         # Get the OUs of the user
-        ou_ids = self.env.user.operating_unit_ids.ids
-        domain = [
-            "|",
-            ("operating_unit_ids", "in", ou_ids),
-            ("operating_unit_ids", "=", False),
-        ]
+        domain = self._user_ous_domain()
         return super().search(domain + args, offset=offset, limit=limit, order=order)
 
     @api.model
     def search_count(self, args, limit=None):
         # Get the OUs of the user
-        ou_ids = self.env.user.operating_unit_ids.ids
-        domain = [
-            "|",
-            ("operating_unit_ids", "in", ou_ids),
-            ("operating_unit_ids", "=", False),
-        ]
+        domain = self._user_ous_domain()
         return super().search_count(domain + args, limit=limit)
