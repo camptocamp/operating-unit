@@ -4,6 +4,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 from odoo import api, models
 from odoo.exceptions import UserError
+from odoo.fields import Command
 
 
 class ResUsers(models.Model):
@@ -15,7 +16,7 @@ class ResUsers(models.Model):
         for rec in res:
             if rec.default_operating_unit_id:
                 rec.partner_id.operating_unit_ids = [
-                    (4, rec.default_operating_unit_id.id)
+                    Command.link(rec.default_operating_unit_id.id)
                 ]
                 rec.check_partner_operating_unit()
         return res
@@ -26,7 +27,7 @@ class ResUsers(models.Model):
             if vals.get("default_operating_unit_id"):
                 # Add the new OU
                 user.partner_id.operating_unit_ids = [
-                    (4, user.default_operating_unit_id.id)
+                    Command.link(user.default_operating_unit_id.id)
                 ]
                 user.check_partner_operating_unit()
             return res
