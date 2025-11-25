@@ -1,1 +1,2 @@
 odoo-addon-base_view_inheritance_extension @ git+https://github.com/OCA/server-tools.git@refs/pull/3382/head#subdirectory=base_view_inheritance_extension
+odoo-addon-account_operating_unit @ git+https://github.com/OCA/operating-unit.git@refs/pull/812/head#subdirectory=account_operating_unit
