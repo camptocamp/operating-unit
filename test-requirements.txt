@@ -1,0 +1,1 @@
+odoo-addon-base_view_inheritance_extension @ git+https://github.com/OCA/server-tools.git@refs/pull/3382/head#subdirectory=base_view_inheritance_extension
