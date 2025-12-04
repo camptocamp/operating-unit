@@ -2,7 +2,12 @@
 # - Jordi Ballester Alomar
 # Copyright 2015-TODAY Serpent Consulting Services Pvt. Ltd. - Sudhir Arya
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
+import logging
+
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
+
+_logger = logging.getLogger(__name__)
 
 
 class ResUsers(models.Model):
@@ -14,6 +19,16 @@ class ResUsers(models.Model):
         if not uid2:
             uid2 = self.env.user.id
         user = self.env["res.users"].browse(uid2)
+        # Check user read access on operating units.
+        # For other modules' (that even don't depend on ``operating_unit``) tests,
+        # we can have an AccessError raised for users without access to OUs.
+        # Therefore, we catch this exception and safely ignore it.
+        try:
+            self.env["operating.unit"].with_user(user).check_access_rights("read")
+            self.env["operating.unit"].with_user(user).check_access_rule("read")
+        except AccessError:
+            _logger.debug("User '%s' has no read access on operating units.", user.name)
+            return False
         # check if the company of the default OU is active
         if user.default_operating_unit_id.sudo().company_id in self.env.companies:
             return user.default_operating_unit_id
