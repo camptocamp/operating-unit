@@ -22,6 +22,7 @@ class StockWarehouse(models.Model):
         string="Operating Unit",
         default=_default_operating_unit,
         check_company=True,
+        index=True,
     )
 
 
