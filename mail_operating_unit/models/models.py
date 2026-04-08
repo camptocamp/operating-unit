@@ -10,16 +10,26 @@ class BaseModel(models.AbstractModel):
     def _mail_get_operating_unit(self):
         """Retrieves the operating unit ID if it exists and is truthy.
 
-        This method checks if the instance has the attribute `operating_unit_id`
+        This method checks if the instance has the attribute
+        either `operating_unit_id` or `operating_unit_ids`
         and whether it holds a truthy value.
-        If both conditions are met, it returns the value of `operating_unit_id`.
+        If both conditions are met, in case of `operating_unit_id`
+        it returns the value of `operating_unit_id`.
+        In case of `operating_unit_ids`, if exactly one operating unit is set,
+        it returns the single record of the recordset.
         Otherwise, it returns `False`.
         """
-        return (
-            self.operating_unit_id
-            if "operating_unit_id" in self and self.operating_unit_id
-            else False
-        )
+        if "operating_unit_id" in self and self.operating_unit_id:
+            return self.operating_unit_id
+        if "operating_unit_ids" in self:
+            operating_units = self.operating_unit_ids
+            if (
+                operating_units
+                and len(operating_units) == 1
+                and operating_units.alias_domain_id
+            ):
+                return operating_units
+        return False
 
     def _mail_get_operating_units(self):
         """Retrieve the operating unit (OU) based on specific criteria.
