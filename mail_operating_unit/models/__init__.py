@@ -2,3 +2,4 @@
 from . import models
 from . import mail_template
 from . import operating_unit
+from . import res_config_settings

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <app name="general_settings" position="inside">
+                <block title="Operating Unit Mail">
+                    <setting
+                        id="operating_unit_use_mail_server"
+                        string="Use operating unit outgoing mail server"
+                        help="Automatically select the outgoing mail server from the operating unit unless the email template already defines one."
+                    >
+                        <field name="operating_unit_use_mail_server" />
+                    </setting>
+                </block>
+            </app>
+        </field>
+    </record>
+</odoo>
