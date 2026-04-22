@@ -1,7 +1,8 @@
-# © 2017 Niaga Solution - Edi Santoso <repodevs@gmail.com>
+# © 2017 Niaga Solution - EdiAntoso <repodevs@gmail.com>
 # Copyright (C) 2019 Serpent Consulting Services
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 from odoo.fields import Domain
 
 
@@ -15,6 +16,26 @@ class ResPartner(models.Model):
         column2="operating_unit_id",
         string="Operating Units",
     )
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "operating_unit_ids" in vals:
+            for partner in self:
+                if partner.user_ids:
+                    assigned_operating_units = set(
+                        user.assigned_operating_unit_ids for user in partner.user_ids
+                    )
+                    if (
+                        len(assigned_operating_units) > 1
+                        or partner.operating_unit_ids not in assigned_operating_units
+                    ):
+                        raise UserError(
+                            self.env._(
+                                "The operating units of the partner are not compatible "
+                                "with the operating units of the related user(s)."
+                            )
+                        )
+        return result
 
     @api.model
     def _user_ous_domain(self):
