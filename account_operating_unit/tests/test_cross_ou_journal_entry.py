@@ -6,11 +6,11 @@ from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import Form
 
-from . import test_account_operating_unit as test_ou
+from . import test_account_operating_unit_common as test_ou
 
 
 @tagged("post_install", "-at_install")
-class TestCrossOuJournalEntry(test_ou.TestAccountOperatingUnit):
+class TestCrossOuJournalEntry(test_ou.TestAccountOperatingUnitCommon):
     def _check_balance(self, account_id, acc_type="clearing"):
         # Check balance for all operating units
         domain = [("account_id", "=", account_id)]
